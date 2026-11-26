@@ -1,0 +1,151 @@
+:root {
+  color: #262626;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  --header-accent: #1456a0;
+  --cookie-accent: #8b3e00;
+  --query-accent: #176349;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  width: 528px;
+  margin: 0;
+}
+
+.popup { padding: 16px; }
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+h1 { margin: 0; font-size: 24px; font-weight: 400; line-height: 32px; }
+h2 { margin: 0; font-size: 16px; font-weight: 700; line-height: 24px; }
+p { margin: 0; }
+.context, .hint { color: #595959; font-size: 13px; line-height: 20px; }
+.context { margin-top: 2px; }
+
+.activation { display: flex; align-items: center; gap: 8px; line-height: 32px; }
+.activation input { width: 18px; height: 18px; accent-color: #4d4d4d; }
+
+.rule-editor { --rule-accent: var(--header-accent); }
+.rule-editor:has(#rule-type option[value="cookie"]:checked) { --rule-accent: var(--cookie-accent); }
+.rule-editor:has(#rule-type option[value="query"]:checked) { --rule-accent: var(--query-accent); }
+.hint { margin: 4px 0 12px; }
+.rule-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.field { display: grid; gap: 6px; min-width: 0; font-size: 14px; line-height: 20px; }
+.field-heading { display: flex; align-items: center; gap: 8px; }
+.detect-button { padding: 2px 8px; border: 1px solid #4d4d4d; background: #fff; color: #262626; font: inherit; }
+.detect-button:disabled { border-color: #aaa; color: #595959; }
+.full { grid-column: 1 / -1; }
+.field input, .field select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d5d5d5;
+  border-radius: 0;
+  background: #fff;
+  color: #262626;
+  font: inherit;
+}
+
+.field input::placeholder { color: #737373; }
+.field input:disabled, .field select:disabled { background: #f7f7f7; color: #595959; }
+.field select option { background: #fff; color: #262626; }
+@supports (appearance: base-select) {
+  .field select, .field select::picker(select) { appearance: base-select; }
+  .field select { align-items: center; }
+  .field select::picker(select) {
+    border: 1px solid #d5d5d5;
+    background: #fff;
+  }
+  .field select option { padding: 10px 12px; font: inherit; }
+  .field select option:hover, .field select option:focus { background: #f0f0f0; }
+  .field select option:checked { font-weight: 700; }
+  .field select option:disabled { color: #737373; }
+}
+.scope { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+.scope label { display: flex; align-items: center; gap: 4px; }
+.scope input { accent-color: var(--rule-accent); }
+.form-actions { display: flex; gap: 8px; }
+.add-button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--rule-accent);
+  background: var(--rule-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+.add-button:disabled { border-color: #aaa; background: #e6e6e6; color: #595959; }
+.form-actions button:not(.add-button), .rule-actions button { padding: 4px 8px; border: 1px solid #aaa; background: #fff; color: #262626; font: inherit; }
+
+.rules { margin-top: 24px; padding-top: 16px; border-top: 1px solid #e6e6e6; }
+.rules p { margin-top: 8px; color: #595959; font-size: 14px; line-height: 20px; }
+#rules-list .rule-group { margin-top: 20px; border-left: 4px solid var(--rule-accent); }
+#rules-list .rule-group[data-rule-type="header"] { --rule-accent: var(--header-accent); }
+#rules-list .rule-group[data-rule-type="cookie"] { --rule-accent: var(--cookie-accent); }
+#rules-list .rule-group[data-rule-type="query"] { --rule-accent: var(--query-accent); }
+#rules-list h3 { margin: 0; padding-left: 4px; font-size: 16px; }
+#rules-list h3 label { display: flex; align-items: center; gap: 8px; }
+#rules-list ul { list-style: none; margin: 8px 0 0 28px; padding: 0; }
+#rules-list li { display: flex; align-items: center; gap: 8px; padding: 10px 8px; border-top: 1px solid #e6e6e6; font-size: 14px; }
+#rules-list li > div:not(.rule-actions) { display: flex; flex: 1; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; min-width: 0; overflow-wrap: anywhere; }
+#rules-list li span { color: #595959; }
+#rules-list input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--rule-accent); }
+.rule-name { position: relative; min-width: 0; }
+.rule-name strong { cursor: help; }
+.rule-tooltip {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 6px);
+  left: 0;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 80px));
+  padding: 8px 12px;
+  border: 1px solid #4d4d4d;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  font-size: 12px;
+  line-height: 18px;
+}
+.rule-tooltip::before { position: absolute; top: -7px; right: 0; left: 0; height: 7px; content: ""; }
+.rule-tooltip.above { top: auto; bottom: calc(100% + 6px); }
+.rule-tooltip.above::before { top: auto; bottom: -7px; }
+.rule-tooltip dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; }
+.rule-tooltip dt { color: #595959; }
+.rule-tooltip dd { margin: 0; overflow-wrap: anywhere; }
+.rule-actions { display: flex; align-items: center; gap: 6px; }
+.rule-actions .edit, .rule-actions .delete { color: #fff; font-weight: 700; }
+.rule-actions .edit { border-color: #4d4d4d; background: #4d4d4d; }
+.rule-actions .delete { border-color: #b00020; background: #b00020; }
+.rule-actions .edit:hover:not(:disabled) { background: #262626; }
+.rule-actions .delete:hover:not(:disabled) { background: #8c0019; }
+.rule-actions button:disabled { border-color: #aaa; background: #e6e6e6; color: #595959; }
+.error { margin-bottom: 16px; color: #a00018; font-size: 14px; line-height: 20px; }
+#issues { margin-bottom: 16px; padding: 12px; border: 1px solid #d5d5d5; font-size: 14px; }
+#issues ul { padding-left: 20px; }
+#issues li { margin: 8px 0; overflow-wrap: anywhere; }
+#issues button { margin: 4px 8px 0 0; padding: 4px 8px; border: 1px solid #aaa; background: #fff; font: inherit; }
+footer { display: flex; justify-content: flex-end; margin-top: 24px; color: #595959; font-size: 13px; }
+.preview-form { display: grid; gap: 8px; margin-top: 12px; }
+.preview-form button { justify-self: start; padding: 6px 8px; border: 1px solid #aaa; background: #fff; font: inherit; }
+#preview ul { padding-left: 20px; font-size: 13px; overflow-wrap: anywhere; }
+body.preview-mode { width: auto; padding: 24px; background: #f2f2f2; }
+.preview-mode .popup {
+  width: 528px;
+  max-width: 100%;
+  max-height: 600px;
+  overflow: auto;
+  border: 1px solid #c8c8c8;
+  background: #fff;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+}
+.preview-mode #preview { width: 528px; max-width: 100%; }

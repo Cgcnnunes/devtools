@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HeaderLab</title>
+  </head>
+  <body>
+    <main class="popup">
+      <header class="popup-header">
+        <div>
+          <h1>HeaderLab</h1>
+          <p id="context" class="context" role="status">Loading…</p>
+        </div>
+        <label class="activation">
+          <span>Activate</span>
+          <input id="activation" type="checkbox" disabled />
+        </label>
+      </header>
+
+      <p id="error" class="error" role="alert" hidden></p>
+      <section id="issues" aria-labelledby="issues-heading" hidden>
+        <h2 id="issues-heading">Needs attention</h2>
+        <ul id="warnings-list"></ul>
+        <button type="button" id="clear-warnings" hidden>Dismiss warnings</button>
+        <ul id="conflicts-list"></ul>
+      </section>
+
+      <section class="rule-editor" aria-label="Rule editor">
+        <p class="hint" id="rule-hint" hidden></p>
+        <form id="rule-form">
+        <fieldset id="rule-fields" class="rule-form" disabled>
+          <label class="field full">
+            <span>Type</span>
+            <select id="rule-type"><option value="header">Header</option><option value="cookie">Cookie</option><option value="query">Query parameter</option></select>
+          </label>
+          <label class="field full" id="operation-field">
+            <span>Operation</span>
+            <select id="operation"><option value="set">Set</option><option value="append" id="append-operation">Append</option><option value="remove">Remove</option></select>
+          </label>
+          <label class="field">
+            <span id="name-label">Header name</span>
+            <input id="header-name" placeholder="Header name" required />
+          </label>
+          <label class="field">
+            <span>Value</span>
+            <input id="header-value" placeholder="Value" />
+          </label>
+          <div class="field full">
+            <div class="field-heading">
+              <label for="site">Site</label>
+              <button type="button" class="detect-button" id="detect-site">Detect</button>
+            </div>
+            <input id="site" placeholder="example.com" required />
+          </div>
+          <label class="field" id="cookie-path-field" hidden>
+            <span>Cookie path</span>
+            <input id="cookie-path" value="/" />
+          </label>
+          <label class="field" id="cookie-samesite-field" hidden>
+            <span>SameSite</span>
+            <select id="cookie-samesite"><option value="lax">Lax</option><option value="strict">Strict</option><option value="no_restriction">None</option><option value="unspecified">Unspecified</option></select>
+          </label>
+          <div class="scope full" id="cookie-options" hidden>
+            <label><input id="cookie-secure" type="checkbox" checked /> Secure</label>
+            <label><input id="cookie-httponly" type="checkbox" /> HttpOnly</label>
+          </div>
+          <div class="scope full">
+            <label><input id="subdomains" type="checkbox" /> Include subdomains</label>
+            <label id="https-field"><input id="https" type="checkbox" checked /> HTTPS</label>
+            <label id="http-field"><input id="http" type="checkbox" /> HTTP</label>
+          </div>
+          <div class="form-actions full">
+            <button type="submit" class="add-button" id="submit-rule">Add header</button>
+            <button type="button" id="cancel-edit" hidden>Cancel</button>
+          </div>
+        </fieldset>
+        </form>
+      </section>
+
+      <section class="rules" aria-labelledby="rules-heading">
+        <h2 id="rules-heading">Rules</h2>
+        <p id="empty-rules">No rules yet.</p>
+        <div id="rules-list"></div>
+      </section>
+      <footer><span id="version"></span></footer>
+    </main>
+    <section id="preview" class="rules" aria-labelledby="preview-heading" hidden>
+        <h2 id="preview-heading">Interactive simulation</h2>
+        <p>Changes affect only this simulated browser, never real tabs, traffic, or cookies. Reload to reset.</p>
+        <form id="preview-navigation" class="preview-form">
+          <label class="field"><span>Simulated address</span><input id="preview-url" type="url" value="https://example.com/" required /></label>
+          <button type="submit">Load simulated address</button>
+        </form>
+        <p>Simulated tabs</p>
+        <ul id="preview-tabs"></ul>
+        <p>Installed simulated header rules</p>
+        <ul id="preview-headers"></ul>
+        <p>Simulated cookies</p>
+        <ul id="preview-cookies"></ul>
+        <form id="preview-site-cookie" class="preview-form">
+          <label class="field"><span>Site cookie name</span><input id="preview-cookie-name" required /></label>
+          <label class="field"><span>Site cookie value</span><input id="preview-cookie-value" /></label>
+          <label class="field"><span>Cookie store</span><select id="preview-cookie-store"><option value="normal">Normal</option><option value="incognito">Incognito</option></select></label>
+          <button type="submit">Set simulated site cookie</button>
+        </form>
+        <p id="preview-error" class="error" role="alert" hidden></p>
+    </section>
+    <script type="module" src="/src/popup/popup.ts"></script>
+  </body>
+</html>

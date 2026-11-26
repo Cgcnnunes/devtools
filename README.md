@@ -31,8 +31,7 @@ npm run build
 ```
 
 These commands check the root configuration and run the corresponding
-Turborepo task in each workspace that defines it. There are no tools yet, so
-the initial build has no workspace tasks to run.
+Turborepo task in each workspace that defines it.
 
 ## Layout
 
@@ -41,5 +40,9 @@ the initial build has no workspace tasks to run.
 
 Each workspace should provide `lint`, `typecheck`, `test`, and `build` scripts
 as appropriate. Versions are managed independently and updated manually.
+
+## Tools
+
+- [HeaderLab](tools/headerlab/README.md) (in development)
 
 No license has been granted for this repository.
