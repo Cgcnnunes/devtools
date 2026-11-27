@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, it } from "vitest";
 
+const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
+
 it("loads as an extension and remembers the activation switch", async () => {
   const extensionPath = resolve("dist");
   const context = await chromium.launchPersistentContext("", {
@@ -31,7 +33,7 @@ it("loads as an extension and remembers the activation switch", async () => {
     await expect.poll(() => activation.isEnabled()).toBe(true);
     expect(await activation.isChecked()).toBe(true);
     expect(await popup.getByText("Normal window").count()).toBe(1);
-    expect(await popup.getByText("v0.5.0").count()).toBe(1);
+    expect(await popup.getByText(`v${version}`, { exact: true }).count()).toBe(1);
 
     await activation.uncheck();
     await expect.poll(() => activation.isEnabled()).toBe(true);
