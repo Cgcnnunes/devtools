@@ -1,0 +1,88 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    # Pull requests already run CI, so a pull request run only plans and packages.
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/quality.yml
+
+  plan:
+    name: plan
+    needs: quality
+    # Skipping quality is only for pull requests, which CI already checks. A merge is never planned unchecked.
+    if: ${{ !cancelled() && (needs.quality.result == 'success' || (needs.quality.result == 'skipped' && github.event_name == 'pull_request')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      deploy: ${{ steps.plan.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          TURBO_SCM_HEAD: ${{ github.sha }}
+        run: node .github/scripts/release.ts plan
+
+  deploy-chrome-extension:
+    name: deploy ${{ matrix.tool.name }}
+    needs: plan
+    # A status function is required: on pull requests quality is skipped, and GitHub would
+    # otherwise skip this job too because an ancestor in its chain was skipped.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.deploy)['chrome-extension'][0] != null }}
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ${{ fromJSON(needs.plan.outputs.deploy)['chrome-extension'] }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/deploy-chrome-extension.yml
+    with:
+      name: ${{ matrix.tool.name }}
+      dir: ${{ matrix.tool.dir }}
+      version: ${{ matrix.tool.version }}
+      tag: ${{ matrix.tool.tag }}
+      publish: ${{ github.ref == 'refs/heads/main' }}
+
+  deployed:
+    name: deployed
+    needs: [quality, plan, deploy-chrome-extension]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Require every job to have succeeded and every planned deploy to have run
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          PLAN: ${{ needs.plan.outputs.deploy }}
+        run: node .github/scripts/release.ts gate

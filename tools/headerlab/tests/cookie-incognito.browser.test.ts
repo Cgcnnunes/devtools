@@ -31,6 +31,17 @@ it("applies cookie and query rules to new incognito windows", async () => {
       await settings.goto(`chrome://extensions/?id=${extensionId}`);
       await settings.getByText("Developer mode", { exact: true }).click();
       await settings.getByText("Allow in Incognito", { exact: true }).click({ timeout: 5000 });
+      // The toggle reloads the extension, and Chromium keeps a "reloading" disable reason until that ends.
+      // Closing the browser first persists it, and the relaunched extension then stays disabled.
+      await expect.poll(() => settings.evaluate(async (id) => {
+        const { developerPrivate } = chrome as unknown as {
+          developerPrivate: {
+            getExtensionsInfo(): Promise<{ id: string; incognitoAccess: { isActive: boolean }; disableReasons: { reloading: boolean } }[]>;
+          };
+        };
+        const info = (await developerPrivate.getExtensionsInfo()).find((entry) => entry.id === id);
+        return info?.incognitoAccess.isActive === true && info.disableReasons.reloading === false;
+      }, extensionId), { timeout: 10_000 }).toBe(true);
       await context.close();
       context = await chromium.launchPersistentContext(profilePath, options);
       const popup = await context.newPage();

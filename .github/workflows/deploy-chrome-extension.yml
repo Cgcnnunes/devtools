@@ -1,0 +1,101 @@
+name: Deploy Chrome extension
+
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: Tool folder name, for example headerlab
+        type: string
+        required: true
+      dir:
+        description: Tool folder, for example tools/headerlab
+        type: string
+        required: true
+      version:
+        description: Version in the tool's package.json
+        type: string
+        required: true
+      tag:
+        description: Release tag to create
+        type: string
+        required: true
+      publish:
+        description: Create the tag and release. False builds the zip only, as a dry run.
+        type: boolean
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      asset: ${{ steps.zip.outputs.asset }}
+      title: ${{ steps.zip.outputs.title }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build the extension
+        env:
+          DIR: ${{ inputs.dir }}
+        run: npx turbo run build --filter="./$DIR"
+      - id: zip
+        name: Zip the extension
+        env:
+          DIR: ${{ inputs.dir }}
+          NAME: ${{ inputs.name }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          built=$(node -p "require('./$DIR/dist/manifest.json').version")
+          if [ "$built" != "$VERSION" ]; then
+            echo "::error::$DIR/dist/manifest.json has version $built but package.json has $VERSION"
+            exit 1
+          fi
+          asset="$NAME-$VERSION.zip"
+          (cd "$DIR/dist" && zip -qrX "$GITHUB_WORKSPACE/$asset" .)
+          title="$(node -p "require('./$DIR/dist/manifest.json').name") $VERSION"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+          echo "$title: \`$asset\`, $(wc -c < "$asset") bytes" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.name }}-extension
+          path: ${{ steps.zip.outputs.asset }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: publish
+    needs: package
+    if: inputs.publish && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: ${{ inputs.name }}-extension
+      - name: Create the tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DIR: ${{ inputs.dir }}
+          TAG: ${{ inputs.tag }}
+          SHA: ${{ github.sha }}
+          ASSET: ${{ needs.package.outputs.asset }}
+          TITLE: ${{ needs.package.outputs.title }}
+        run: |
+          notes="Unzip $ASSET, open chrome://extensions, switch on Developer mode, click Load unpacked and select the unzipped folder.
+
+          Setup guide: https://github.com/$GH_REPO/blob/main/$DIR/README.md#setup"
+          gh release create "$TAG" "$ASSET" --target "$SHA" --title "$TITLE" --notes "$notes"
