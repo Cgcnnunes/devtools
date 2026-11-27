@@ -56,6 +56,8 @@ Turborepo task in each workspace that defines it.
   tools, `deploy-<type>.yml` deploys one tool of that type, and `quality.yml`
   holds the checks both share.
 - `.github/scripts/release.ts`: finds the tools to deploy and builds their tags.
+- `docs/workflows/`: one page per workflow, with the same chapters and a
+  diagram. Start at the [workflows index](docs/workflows/README.md).
 
 Each workspace should provide `lint`, `typecheck`, `test`, and `build` scripts
 as appropriate. Versions are managed independently and updated manually.
@@ -64,7 +66,8 @@ as appropriate. Versions are managed independently and updated manually.
 
 To release a tool, raise `version` in its `package.json` and merge to `main`.
 The **Deploy** workflow then runs the checks, deploys every tool whose version
-has no release yet, and passes only if every deploy passed.
+has no release yet, and passes only if every deploy passed. Each workflow is
+explained, with a diagram, in [docs/workflows](docs/workflows/README.md).
 
 ```mermaid
 flowchart LR
@@ -98,6 +101,9 @@ To add a deploy type, such as a Lambda:
    does the deploy and creates the tag and release.
 3. Add a `deploy-<type>` job to `deploy.yml`, copied from
    `deploy-chrome-extension`, and list it in the `needs` of `deployed`.
+4. Add `docs/workflows/deploy-<type>/README.md`, and add the new job to the
+   Jobs chapter of the [Deploy page](docs/workflows/deploy/README.md) and the
+   [workflows index](docs/workflows/README.md).
 
 To release tools from another top-level folder, such as `scripts/`, add it to
 `categories` in the same script. The tests fail until everything is wired.
