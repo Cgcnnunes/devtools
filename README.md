@@ -2,6 +2,16 @@
 
 A monorepo for independently versioned professional tools.
 
+## Contents
+
+Tools by type. To use one, open its README and follow **Setup**.
+
+### Chrome extensions
+
+- [HeaderLab](tools/headerlab/README.md): manages request headers, query
+  parameters and cookies for selected sites.
+  [Setup](tools/headerlab/README.md#setup)
+
 ## Setup
 
 Use Node.js 24 and npm. With nvm:
@@ -35,14 +45,13 @@ Turborepo task in each workspace that defines it.
 
 ## Layout
 
-- `tools/<name>/`: independently versioned tools, each with a `package.json`.
+- `tools/<name>/`: independently versioned tools, each with a `package.json`
+  and a `README.md`. Every tool README has the same sections in the same
+  order: an intro with one diagram, **Setup**, **How to use**, and **Test
+  locally**. List a new tool under its type in [Contents](#contents).
 - `packages/<name>/`: shared packages added when needed.
 
 Each workspace should provide `lint`, `typecheck`, `test`, and `build` scripts
 as appropriate. Versions are managed independently and updated manually.
-
-## Tools
-
-- [HeaderLab](tools/headerlab/README.md) (in development)
 
 No license has been granted for this repository.
