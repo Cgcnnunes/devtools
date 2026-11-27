@@ -70,7 +70,8 @@ step 4. The unzipped folder takes the place of `dist`.
 
 5. Pin it: click the puzzle-piece icon in Chrome's toolbar, then the pin next
    to **HeaderLab**. Click its button: a popup with **Activate** and
-   **No rules yet.** opens.
+   **No rules yet.** opens. The version in its footer is the version of the
+   zip or build you installed.
 
 Chrome runs the extension from the folder you selected, so do not move or
 delete it.
