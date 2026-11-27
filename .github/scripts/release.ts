@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Top-level folder -> tag prefix. A tool is releasable when its folder is listed here.
 export const categories: Readonly<Record<string, string>> = { tools: "tool" };
@@ -123,6 +124,11 @@ export function gateProblems(deploy: Partial<Plan["deploy"]>, needs: Needs): str
   const problems = Object.entries(needs)
     .filter(([, { result }]) => isBad(result))
     .map(([job, { result }]) => `${job} ${result}`);
+  // Without a successful plan nothing was planned, so the deploy checks below would pass vacuously.
+  const planResult = needs.plan?.result;
+  if (planResult !== "success" && !isBad(planResult)) {
+    problems.push(`plan is ${planResult ?? "missing"}, so nothing was planned or deployed`);
+  }
   for (const type of deployTypes) {
     const planned = deploy[type]?.length ?? 0;
     const result = needs[`deploy-${type}`]?.result;
@@ -198,7 +204,8 @@ function planCommand(env: NodeJS.ProcessEnv): void {
 }
 
 function gateCommand(env: NodeJS.ProcessEnv): void {
-  const needs: Needs = JSON.parse(env.NEEDS || "{}");
+  if (!env.NEEDS) throw new Error("NEEDS is empty: the gate needs the results of the jobs it waits for");
+  const needs: Needs = JSON.parse(env.NEEDS);
   const deploy: Partial<Plan["deploy"]> = JSON.parse(env.PLAN || "{}");
   for (const [job, { result }] of Object.entries(needs)) console.log(`${job}: ${result}`);
   const problems = gateProblems(deploy, needs);
@@ -211,7 +218,10 @@ function main(args: string[], env: NodeJS.ProcessEnv): void {
   else throw new Error("Usage: node .github/scripts/release.ts plan|gate");
 }
 
-if (import.meta.main) {
+// import.meta.main needs Node 24.2. An older Node would run nothing and exit 0, so compare the entry file instead.
+const isEntry = import.meta.main ?? (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href);
+
+if (isEntry) {
   try {
     main(process.argv.slice(2), process.env);
   } catch (error) {

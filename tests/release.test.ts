@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -183,6 +184,43 @@ describe("gateProblems", () => {
   it("fails when the job for a planned deploy type is missing from the gate", () => {
     expect(gateProblems(planned, { quality: success, plan: success })).toEqual([expect.stringContaining("deploy-chrome-extension")]);
   });
+
+  it("fails when plan was skipped, because nothing was planned or deployed and a green run would be false", () => {
+    expect(gateProblems(nothing, { quality: success, plan: { result: "skipped" } })).toEqual([expect.stringContaining("plan")]);
+  });
+
+  it("fails when plan is missing from the gate", () => {
+    expect(gateProblems(nothing, { quality: success })).toEqual([expect.stringContaining("plan")]);
+  });
+
+  it("reports a failed plan once", () => {
+    expect(gateProblems(nothing, { quality: success, plan: { result: "failure" } })).toEqual(["plan failure"]);
+  });
+});
+
+describe("gate command", () => {
+  function gate(needs: string, plan = "") {
+    const env: NodeJS.ProcessEnv = { ...process.env, NEEDS: needs, PLAN: plan };
+    delete env.GITHUB_ACTIONS;
+    return spawnSync(process.execPath, [".github/scripts/release.ts", "gate"], { encoding: "utf8", env });
+  }
+
+  it("fails without the job results instead of passing silently", () => {
+    const result = gate("");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("NEEDS");
+  });
+
+  it("fails when a job failed", () => {
+    const result = gate(JSON.stringify({ quality: { result: "failure" }, plan: { result: "skipped" } }));
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("quality failure");
+  });
+
+  it("passes when every job succeeded", () => {
+    const result = gate(JSON.stringify({ quality: { result: "success" }, plan: { result: "success" } }), '{"chrome-extension":[]}');
+    expect(result.status, result.stderr).toBe(0);
+  });
 });
 
 describe("affectedDirs", () => {
@@ -237,7 +275,7 @@ function jobBlock(workflow: string, id: string): string {
   const lines = workflow.split("\n");
   const start = lines.indexOf(`  ${id}:`);
   if (start < 0) return "";
-  const end = lines.findIndex((line, index) => index > start && /^ {2}\S/.test(line));
+  const end = lines.findIndex((line, index) => index > start && /^ {2}[\w-]+:/.test(line));
   return lines.slice(start, end < 0 ? undefined : end).join("\n");
 }
 
@@ -271,5 +309,23 @@ describe("deploy workflows", () => {
   it("builds a chrome extension through Turborepo, so its workspace dependencies are built first", () => {
     const workflow = readFileSync(".github/workflows/deploy-chrome-extension.yml", "utf8");
     expect(workflow).toContain("turbo run build");
+  });
+
+  // Without a status function GitHub skips these when quality is skipped or fails, and a gate that
+  // never runs, or a plan that never runs, leaves a green run with nothing deployed or rehearsed.
+  it("runs the gate whatever happened before it", () => {
+    expect(jobBlock(deploy(), "deployed")).toMatch(/^ {4}if: .*always\(\)/m);
+  });
+
+  it("plans after a skipped quality job only on pull requests, so a merge is never planned unchecked", () => {
+    const job = jobBlock(deploy(), "plan");
+    expect(job, "status function in if").toMatch(/^ {4}if: .*(!cancelled\(\)|always\(\)|!failure\(\))/m);
+    expect(job, "skip only on pull requests").toContain("needs.quality.result == 'skipped' && github.event_name == 'pull_request'");
+  });
+
+  // Merges queue instead of cancelling, so a hung job would hold every later deploy for six hours.
+  it.each(readdirSync(".github/workflows"))("%s gives every job with a runner a timeout", (file) => {
+    const workflow = readFileSync(`.github/workflows/${file}`, "utf8");
+    expect(workflow.match(/timeout-minutes:/g)?.length ?? 0).toBe(workflow.match(/runs-on:/g)?.length ?? 0);
   });
 });

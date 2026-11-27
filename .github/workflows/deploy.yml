@@ -23,8 +23,10 @@ jobs:
   plan:
     name: plan
     needs: quality
-    if: ${{ !cancelled() && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    # Skipping quality is only for pull requests, which CI already checks. A merge is never planned unchecked.
+    if: ${{ !cancelled() && (needs.quality.result == 'success' || (needs.quality.result == 'skipped' && github.event_name == 'pull_request')) }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       deploy: ${{ steps.plan.outputs.deploy }}
     steps:
@@ -70,6 +72,7 @@ jobs:
     needs: [quality, plan, deploy-chrome-extension]
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
@@ -77,6 +80,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          package-manager-cache: false
       - name: Require every job to have succeeded and every planned deploy to have run
         env:
           NEEDS: ${{ toJSON(needs) }}
