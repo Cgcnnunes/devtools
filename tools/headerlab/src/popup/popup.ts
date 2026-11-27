@@ -26,7 +26,6 @@ const fields = required("#rule-fields", HTMLFieldSetElement);
 const ruleType = required("#rule-type", HTMLSelectElement);
 const appendOption = required("#append-operation", HTMLOptionElement);
 const nameLabel = required("#name-label", HTMLElement);
-const hint = required("#rule-hint", HTMLElement);
 const operation = required("#operation", HTMLSelectElement);
 const operationField = required("#operation-field", HTMLElement);
 const cookiePathField = required("#cookie-path-field", HTMLElement);
@@ -99,12 +98,6 @@ function configureType(): void {
   if (query && operation.value === "append") operation.value = "set";
   nameLabel.textContent = cookie ? "Cookie name" : query ? "Parameter name" : "Header name";
   name.placeholder = nameLabel.textContent;
-  hint.hidden = !cookie && !query;
-  hint.textContent = cookie
-    ? "Session cookies only. Site and parent-host access is requested for HTTP and HTTPS. Backups are session-only and can be lost when Chrome restarts or the extension reloads."
-    : query
-    ? "Matching addresses change without reloading. Refresh the page to send the new query."
-    : "";
   value.disabled = !cookie && operation.value === "remove";
   submit.textContent = cookie ? editingCookie ? "Save cookie" : "Add cookie" : query
     ? editingQuery ? "Save parameter" : "Add parameter"

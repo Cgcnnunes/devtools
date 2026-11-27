@@ -29,8 +29,7 @@ body {
 h1 { margin: 0; font-size: 24px; font-weight: 400; line-height: 32px; }
 h2 { margin: 0; font-size: 16px; font-weight: 700; line-height: 24px; }
 p { margin: 0; }
-.context, .hint { color: #595959; font-size: 13px; line-height: 20px; }
-.context { margin-top: 2px; }
+.context { margin-top: 2px; color: #595959; font-size: 13px; line-height: 20px; }
 
 .activation { display: flex; align-items: center; gap: 8px; line-height: 32px; }
 .activation input { width: 18px; height: 18px; accent-color: #4d4d4d; }
@@ -38,12 +37,29 @@ p { margin: 0; }
 .rule-editor { --rule-accent: var(--header-accent); }
 .rule-editor:has(#rule-type option[value="cookie"]:checked) { --rule-accent: var(--cookie-accent); }
 .rule-editor:has(#rule-type option[value="query"]:checked) { --rule-accent: var(--query-accent); }
-.hint { margin: 4px 0 12px; }
 .rule-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
 .field { display: grid; gap: 6px; min-width: 0; font-size: 14px; line-height: 20px; }
 .field-heading { display: flex; align-items: center; gap: 8px; }
-.detect-button { padding: 2px 8px; border: 1px solid #4d4d4d; background: #fff; color: #262626; font: inherit; }
+.detect-button {
+  padding: 2px 8px;
+  border: 1px solid #4d4d4d;
+  background: #fff;
+  color: #262626;
+  font: inherit;
+  transition: transform 160ms ease-out, background-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+/* Press in quickly, spring back slowly, so even a fast click is seen. */
+.detect-button:active:not(:disabled) {
+  transform: scale(0.92);
+  background: #e6e6e6;
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 25%);
+  transition-duration: 70ms;
+}
 .detect-button:disabled { border-color: #aaa; color: #595959; }
+@media (prefers-reduced-motion: reduce) {
+  .detect-button { transition: none; }
+  .detect-button:active:not(:disabled) { transform: none; }
+}
 .full { grid-column: 1 / -1; }
 .field input, .field select {
   width: 100%;
