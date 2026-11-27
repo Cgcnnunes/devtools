@@ -14,8 +14,12 @@ flowchart LR
 
 ## Setup
 
-You need Git, Node.js 24 and Google Chrome. Run the commands in a terminal
-(macOS: Terminal, Windows: Command Prompt).
+You need Google Chrome. To build from source you also need Git and Node.js 24.
+Run the commands in a terminal (macOS: Terminal, Windows: Command Prompt).
+
+No Git or Node.js? Download `headerlab-<version>.zip` from
+[Releases](https://github.com/Cgcnnunes/devtools/releases), unzip it and go to
+step 4. The unzipped folder takes the place of `dist`.
 
 1. Check Git and Node.js:
 
@@ -60,15 +64,16 @@ You need Git, Node.js 24 and Google Chrome. Run the commands in a terminal
 4. Add the extension to Chrome:
    1. Open `chrome://extensions` and switch on **Developer mode** (top right).
    2. Click **Load unpacked**.
-   3. Open your home folder, then `devtools`, `tools` and `headerlab`. Select
-      `dist` and click **Select** (Windows: **Select Folder**).
+   3. Select the extension folder and click **Select** (Windows: **Select
+      Folder**). That is `dist` (in your home folder, then `devtools`, `tools`
+      and `headerlab`) or the unzipped release folder.
 
 5. Pin it: click the puzzle-piece icon in Chrome's toolbar, then the pin next
    to **HeaderLab**. Click its button: a popup with **Activate** and
    **No rules yet.** opens.
 
-Chrome runs the extension from the `devtools` folder, so do not move or delete
-it.
+Chrome runs the extension from the folder you selected, so do not move or
+delete it.
 
 If something goes wrong:
 
@@ -80,14 +85,16 @@ If something goes wrong:
   as company proxies often do. The project only needs public packages from
   registry.npmjs.org. Ask IT how to set up Git and npm.
 - `Manifest file is missing or unreadable` in Chrome: you did not select the
-  `dist` folder, or the build did not run.
+  folder that contains `manifest.json` (`dist` or the unzipped release), or the
+  build did not run.
 - **Developer mode** is missing or greyed out: your organization blocks
   unpacked extensions. Ask IT.
 
 To update, untick **Activate** in the popup (HeaderLab tries to restore cookies
-it replaced). In the `devtools` folder run `git pull`, `npm ci` and
-`npm run build -w headerlab`. Then click **Reload** (the circular arrow) on the
-HeaderLab card at `chrome://extensions` and tick **Activate** again.
+it replaced). Then run `git pull`, `npm ci` and `npm run build -w headerlab` in
+the `devtools` folder, or replace the files in your extension folder with those
+of the new release zip. Click **Reload** (the circular arrow) on the HeaderLab
+card at `chrome://extensions` and tick **Activate** again.
 
 To remove it, untick **Activate**, then click **Remove** on the HeaderLab card.
 

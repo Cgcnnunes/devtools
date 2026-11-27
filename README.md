@@ -52,6 +52,9 @@ Turborepo task in each workspace that defines it.
 - `packages/<name>/`: shared packages added when needed.
 
 Each workspace should provide `lint`, `typecheck`, `test`, and `build` scripts
-as appropriate. Versions are managed independently and updated manually.
+as appropriate. Versions are managed independently and updated manually. To
+publish a tool version, merge its version bump to `main`, then run the tool's
+release workflow (for example **Release HeaderLab**) in GitHub Actions. It
+attaches the built extension as a zip to a GitHub release.
 
 No license has been granted for this repository.
