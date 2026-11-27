@@ -46,7 +46,7 @@ jobs:
       - name: Build the extension
         env:
           DIR: ${{ inputs.dir }}
-        run: npm run build -w "$DIR"
+        run: npx turbo run build --filter="./$DIR"
       - id: zip
         name: Zip the extension
         env:

@@ -71,7 +71,7 @@ flowchart LR
     Merge["Merge to main"] --> Quality["quality<br/>lint, typecheck, tests, build"]
     Quality --> Plan["plan<br/>tools with an unreleased version"]
     Plan --> Deploy["deploy, one job per tool<br/>creates its tag and release"]
-    Deploy --> Gate["deployed<br/>fails if any deploy failed"]
+    Deploy --> Gate["deployed<br/>fails if a deploy failed or did not run"]
 ```
 
 - **Tag**: `<category>-<name>-vMM-mm-pp`. The category is the singular of the
@@ -83,9 +83,10 @@ flowchart LR
 - **Retry**: a failed run is repeated by the next merge, because the tool's
   version still has no release. To repeat it at once, run **Deploy** on `main`
   in GitHub Actions.
-- **Pull requests**: **Deploy** rehearses the merge for the tools the pull
-  request changes. For each one whose version has no release yet, it builds the
-  zip and keeps it as a 7-day artifact. It creates no tag or release.
+- **Pull requests**: **Deploy** rehearses the change. It builds the zip of every
+  tool the pull request changes, or of every tool when the pull request
+  changes `deploy*.yml` or `.github/scripts`, and keeps it as a 7-day artifact.
+  It creates no tag or release.
 - **Type**: each tool declares how it is deployed in its `package.json`, for
   example `"devtools": { "type": "chrome-extension" }`. The
   `chrome-extension` type builds the tool, zips `dist` and creates the release.

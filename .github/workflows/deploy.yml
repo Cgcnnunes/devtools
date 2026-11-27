@@ -23,7 +23,7 @@ jobs:
   plan:
     name: plan
     needs: quality
-    if: ${{ !cancelled() && needs.quality.result != 'failure' }}
+    if: ${{ !cancelled() && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     runs-on: ubuntu-latest
     outputs:
       deploy: ${{ steps.plan.outputs.deploy }}
@@ -48,7 +48,9 @@ jobs:
   deploy-chrome-extension:
     name: deploy ${{ matrix.tool.name }}
     needs: plan
-    if: fromJSON(needs.plan.outputs.deploy)['chrome-extension'][0] != null
+    # A status function is required: on pull requests quality is skipped, and GitHub would
+    # otherwise skip this job too because an ancestor in its chain was skipped.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && fromJSON(needs.plan.outputs.deploy)['chrome-extension'][0] != null }}
     strategy:
       fail-fast: false
       matrix:
@@ -68,13 +70,15 @@ jobs:
     needs: [quality, plan, deploy-chrome-extension]
     if: ${{ always() }}
     runs-on: ubuntu-latest
-    permissions: {}
     steps:
-      - name: Require every job to have succeeded or been skipped
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Require every job to have succeeded and every planned deploy to have run
         env:
-          RESULTS: ${{ join(needs.*.result, ' ') }}
-        run: |
-          echo "Job results: $RESULTS"
-          case " $RESULTS " in
-            *" failure "* | *" cancelled "*) exit 1 ;;
-          esac
+          NEEDS: ${{ toJSON(needs) }}
+          PLAN: ${{ needs.plan.outputs.deploy }}
+        run: node .github/scripts/release.ts gate
