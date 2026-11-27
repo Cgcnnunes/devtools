@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -151,5 +151,22 @@ describe("this repository", () => {
     expect(tools.length, "tools").toBeGreaterThan(0);
     for (const entry of tools) expect(entry.tag).toMatch(/^tool-[a-z0-9-]+-v\d{2}-\d{2}-\d{2}$/);
     expect(new Set(tools.map((entry) => entry.tag)).size).toBe(tools.length);
+  });
+});
+
+describe("deploy workflows", () => {
+  const deploy = () => readFileSync(".github/workflows/deploy.yml", "utf8");
+
+  it("calls one reusable workflow per deploy type and no other", () => {
+    const called = [...deploy().matchAll(/uses: \.\/\.github\/workflows\/deploy-([a-z-]+)\.yml/g)].map((match) => match[1]);
+    expect(called.sort()).toEqual([...deployTypes].sort());
+  });
+
+  it.each(deployTypes)("%s is reusable, creates the release itself and is awaited by the final gate", (type) => {
+    const workflow = readFileSync(`.github/workflows/deploy-${type}.yml`, "utf8");
+    expect(workflow, "workflow_call trigger").toMatch(/^on:\n {2}workflow_call:/m);
+    expect(workflow, "release creation").toContain("gh release create");
+    const gate = deploy().match(/^ {2}deployed:[\s\S]*?needs: \[([^\]]*)\]/m)?.[1] ?? "";
+    expect(gate, "needs of the deployed job").toContain(`deploy-${type}`);
   });
 });

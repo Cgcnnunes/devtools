@@ -1,0 +1,80 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    # Pull requests already run CI, so a pull request run only plans and packages.
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/quality.yml
+
+  plan:
+    name: plan
+    needs: quality
+    if: ${{ !cancelled() && needs.quality.result != 'failure' }}
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.plan.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          TURBO_SCM_HEAD: ${{ github.sha }}
+        run: node .github/scripts/release.ts plan
+
+  deploy-chrome-extension:
+    name: deploy ${{ matrix.tool.name }}
+    needs: plan
+    if: fromJSON(needs.plan.outputs.deploy)['chrome-extension'][0] != null
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ${{ fromJSON(needs.plan.outputs.deploy)['chrome-extension'] }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/deploy-chrome-extension.yml
+    with:
+      name: ${{ matrix.tool.name }}
+      dir: ${{ matrix.tool.dir }}
+      version: ${{ matrix.tool.version }}
+      tag: ${{ matrix.tool.tag }}
+      publish: ${{ github.ref == 'refs/heads/main' }}
+
+  deployed:
+    name: deployed
+    needs: [quality, plan, deploy-chrome-extension]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require every job to have succeeded or been skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "* | *" cancelled "*) exit 1 ;;
+          esac
